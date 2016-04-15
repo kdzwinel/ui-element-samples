@@ -134,38 +134,42 @@ class Cards {
 
   animateOtherCardsIntoPosition () {
     let isAfterCurrentTarget = false;
+    let hasMovedACard = false;
 
-    const onTransitionEnd = evt => {
-      this.resetTarget();
-
-      evt.target.style.transition = 'none';
-      evt.target.removeEventListener('transitionend', onTransitionEnd);
+    const frames = [{
+        transform: `translateY(${this.targetBCR.height + 20}px)`
+    }, {
+        transform: 'none'
+    }];
+    const options = {
+        easing: 'cubic-bezier(0,0,0.31,1)',
+        duration: 150
     };
+    const callback = () => this.resetTarget();
 
-    for (let i = 0; i < this.cards.length; i++) {
-      const card = this.cards[i];
-
+    for (const card of this.cards) {
       // Wait until we find the target card.
       if (card === this.target) {
         isAfterCurrentTarget = true;
         continue;
       }
 
+      // Skip dismissed cards.
+      if (!card.parentNode)
+        continue;
+
       if (!isAfterCurrentTarget)
         continue;
 
-      // Move the card, then wait a frame and then slide it up.
-      card.style.transform = `translateY(${this.targetBCR.height + 20}px)`;
-      requestAnimationFrame(_ => {
-        card.style.transition = 'transform 0.15s cubic-bezier(0,0,0.31,1)';
-        card.style.transform = 'none';
-      });
+      // Move the card down then slide it up.
+      card
+          .animate(frames, options)
+          .addEventListener('finish', callback);
 
-      card.addEventListener('transitionend', onTransitionEnd);
+      hasMovedACard = true;
     }
 
-    // If we didn't find any cards to slide remove the target.
-    if (!isAfterCurrentTarget) {
+    if (!hasMovedACard) {
       this.resetTarget();
     }
   }
